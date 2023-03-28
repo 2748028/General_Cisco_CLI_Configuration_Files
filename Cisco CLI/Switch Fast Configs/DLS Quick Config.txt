@@ -1,0 +1,16 @@
+tclsh
+puts [ open "flash:BASE.CFG" w+ ] {
+hostname DLS1
+ip domain-name CCNP.NET
+no ip domain lookup
+interface range g1/0/1-24, g1/1/1-2
+shutdown
+exit
+vtp mode transparent
+line con 0
+no exec-timeout
+logging synchronous
+exit
+end
+}
+tclquit

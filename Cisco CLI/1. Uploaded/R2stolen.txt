@@ -1,0 +1,277 @@
+hostname R2
+!
+boot-start-marker
+boot-end-marker
+!
+!
+vrf definition VRF-EIGRP
+ rd 65008:2
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+!
+no aaa new-model
+memory-size iomem 10
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+
+
+!
+!
+!
+!
+ip cef
+ipv6 unicast-routing
+ipv6 cef
+!
+multilink bundle-name authenticated
+!
+!
+!
+!
+!
+!
+cts logging verbose
+!
+!
+voice-card 0
+!
+!
+!
+!
+!
+!
+!
+!
+license udi pid CISCO2901/K9 sn FJC1928A14T
+license boot module c2900 technology-package securityk9
+license boot module c2900 technology-package uck9
+license boot module c2900 technology-package datak9
+license boot module c2900 technology-package CollabProSuitek9
+!
+!
+!
+redundancy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback0
+ bandwidth 64
+ ip address 10.8.2.1 255.255.255.0
+ ip ospf network point-to-point
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:20::1/64
+ ospfv3 8 ipv6 area 0
+ ospfv3 8 ipv4 area 0
+!
+interface Loopback1
+ bandwidth 64
+ vrf forwarding VRF-EIGRP
+ ip address 10.8.4.1 255.255.255.0
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:21::1/64
+!
+interface Loopback2
+ bandwidth 64
+ vrf forwarding VRF-EIGRP
+ ip address 10.8.5.1 255.255.255.0
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:22::1/64
+!
+interface Embedded-Service-Engine0/0
+ no ip address
+ shutdown
+!
+interface GigabitEthernet0/0
+ no ip address
+ duplex auto
+ speed auto
+!
+interface GigabitEthernet0/0.10
+ bandwidth 64
+ encapsulation dot1Q 10
+ ip address 10.8.3.5 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:23::1/64
+ ospfv3 8 ipv6 area 8
+ ospfv3 8 ipv4 area 8
+!
+interface GigabitEthernet0/0.20
+ bandwidth 64
+ encapsulation dot1Q 20
+ vrf forwarding VRF-EIGRP
+ ip address 10.8.6.5 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:32::1/64
+!
+interface GigabitEthernet0/1
+ no ip address
+ shutdown
+ duplex auto
+ speed auto
+!
+interface Serial0/0/0
+ bandwidth 64
+ ip address 10.8.3.2 255.255.255.252
+ ipv6 address FE80::2 link-local
+ ipv6 address 2001:DB8:8:12::2/64
+ ospfv3 8 ipv6 area 0
+ ospfv3 8 ipv4 area 0
+!
+interface Serial0/0/1
+ no ip address
+ shutdown
+ clock rate 2000000
+!
+!
+!
+router eigrp CASE2016
+ !
+ address-family ipv4 unicast vrf VRF-EIGRP autonomous-system 8
+  !
+  af-interface Loopback1
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback2
+   passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 2.2.2.2
+  eigrp stub connected
+ exit-address-family
+ !
+ address-family ipv6 unicast vrf VRF-EIGRP autonomous-system 8
+  !
+  af-interface default
+   shutdown
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback2
+   no shutdown
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 2.2.2.2
+  eigrp stub connected
+ exit-address-family
+ !
+ address-family ipv4 unicast autonomous-system 8
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 2.2.2.2
+  eigrp stub connected
+ exit-address-family
+ !
+ address-family ipv6 unicast autonomous-system 8
+  !
+  topology base
+  exit-af-topology
+  eigrp router-id 2.2.2.2
+  eigrp stub connected
+ exit-address-family
+!
+router ospfv3 8
+ !
+ address-family ipv4 unicast
+  redistribute eigrp 8
+  passive-interface Loopback0
+  default-information originate
+  router-id 2.2.2.2
+  auto-cost reference-bandwidth 100000
+  area 8 stub no-summary
+  area 8 range 10.0.0.0 255.255.252.0
+ exit-address-family
+ !
+ address-family ipv6 unicast
+  passive-interface Loopback0
+  router-id 2.2.2.2
+  auto-cost reference-bandwidth 100000
+  area 8 stub no-summary
+ exit-address-family
+!
+router ospf 8
+ router-id 2.2.2.2
+!
+ip forward-protocol nd
+!
+no ip http server
+no ip http secure-server
+!
+!
+!
+!
+!
+control-plane
+!
+ !
+ !
+ !
+ !
+!
+mgcp behavior rsip-range tgcp-only
+mgcp behavior comedia-role none
+mgcp behavior comedia-check-media-src disable
+mgcp behavior comedia-sdp-force disable
+!
+mgcp profile default
+!
+!
+!
+!
+!
+!
+!
+gatekeeper
+ shutdown
+!
+!
+!
+line con 0
+line aux 0
+line 2
+ no activation-character
+ no exec
+ transport preferred none
+ transport output lat pad telnet rlogin lapb-ta mop udptn v120 ssh
+ stopbits 1
+line vty 0 4
+ login
+ transport input none
+!
+scheduler allocate 20000 1000
+!
+end

@@ -1,0 +1,73 @@
+en
+conf t
+hostname R1
+no ip domain-lookup
+ipv6 unicast-routing
+
+int s0/0/1
+bandwidth 64
+ipv6 enable
+ip address 10.18.5.9 255.255.255.252
+ipv6 address FE80::1 link-local
+ipv6 address 2001:DB8:18:8::1/64
+ipv6 summary-address eigrp 18 2001:db8:18:8::0/64
+no shut
+
+int s0/0/0
+clock rate 64000
+bandwidth 64
+ipv6 enable
+ip address 10.18.5.6 255.255.255.252
+ipv6 address FE80::1 link-local
+ipv6 address 2001:DB8:18:7::1/64
+ospfv3 18 ipv4 area 0
+ospfv3 18 ipv6 area 0
+no shut
+exi
+
+router ospfv3 18
+address-family ipv4 unicast
+area 18 range 10.18.0.0 255.255.248.0
+redistribute eigrp 18
+default-information originate 
+router-id 1.1.1.1
+auto-cost reference-bandwidth 100000
+
+
+address-family ipv6 unicast
+default-information originate
+redistribute eigrp 18 include-connected
+router-id 1.1.1.6
+auto-cost reference-bandwidth 100000
+exit-address-family
+
+router eigrp CASE2016
+address-family ipv4 unicast autonomous-system 18
+network 10.18.5.9 0.0.0.0
+eigrp router-id 1.1.1.1
+topology base
+redistribute ospfv3 18 metric 100000 100 255 1 1500
+exit-af-topology
+af-interface s0/0/1
+exi
+
+address-family ipv6 unicast autonomous-system 18
+topology base
+redistribute ospf 18 metric 100000 100 255 1 1500
+af-interface s0/0/0
+shutdown
+eigrp router-id 1.1.1.6
+exit
+exit 
+
+int g0/0
+shutdown
+exit
+
+int g0/1
+shutdown
+exit
+
+
+
+

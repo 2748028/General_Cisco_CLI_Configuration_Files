@@ -1,0 +1,38 @@
+en
+conf t
+hostname SW4
+
+login block-for 10 attempts 3 within 30
+login delay 10
+login on-failure loginlogin on-success log
+
+vlan 10
+name VLAN10
+
+vlan 20
+name VLAN20
+
+int g1/0/19
+switchport mode trunk
+switchport trunk allowed vlan 10,20
+no shut
+
+int g1/0/20
+switchport mode trunk
+switchport trunk allowed vlan 10,20
+no shut
+exit
+
+vtp mode transparent
+
+int range g1/0/1 - 18
+shutdown
+exit
+
+int range g1/0/21 - 28
+shutdown
+exit
+
+int fa0
+shutdown
+exit

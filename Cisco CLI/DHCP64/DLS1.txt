@@ -1,0 +1,273 @@
+Current configuration : 4548 bytes
+!
+! Last configuration change at 12:05:09 UTC Mon Jan 16 2017
+!
+version 15.2
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+no service password-encryption
+service compress-config
+!
+hostname DLS1
+!
+boot-start-marker
+boot-end-marker
+!
+!
+vrf definition Mgmt-vrf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+!
+no aaa new-model
+switch 1 provision ws-c3650-24ps
+!
+!
+!
+!
+!
+ip routing
+!
+no ip domain-lookup
+ip domain-name CCNP.NET
+ip dhcp excluded-address 10.1.99.1 10.1.99.2
+ip dhcp excluded-address 10.1.99.100 10.1.99.104
+ip dhcp excluded-address 10.1.120.1 10.1.120.2
+ip dhcp excluded-address 10.1.120.100 10.1.120.104
+!
+ip dhcp pool VLAN99_DHCP
+ network 10.1.99.0 255.255.255.0
+ default-router 10.1.99.1
+ dns-server 10.1.99.100
+!
+ip dhcp pool VLAN120_DHCP
+ network 10.1.120.0 255.255.255.0
+ default-router 10.1.120.1
+ dns-server 10.1.120.100
+!
+!
+ipv6 unicast-routing
+ipv6 dhcp pool MANAGEMENT_IPV6_DHCP
+ dns-server 2001:DB8:3115:99::100
+!
+ipv6 dhcp pool VLAN120-IPV6-POOL
+ address prefix 2001:DB8:3115:120::/64
+ dns-server 2001:DB8:3115:99::100
+ domain-name switch.ccnp
+!
+qos queue-softmax-multiplier 100
+vtp mode transparent
+!
+!
+diagnostic bootup level minimal
+spanning-tree mode pvst
+spanning-tree extend system-id
+hw-switch switch 1 logging onboard message level 3
+!
+redundancy
+ mode sso
+!
+!
+vlan 99
+ name MGMT1
+!
+vlan 110
+ name INTERNODE
+!
+vlan 120
+ name MGMT2
+!
+!
+class-map match-any non-client-nrt-class
+!
+policy-map port_child_policy
+ class non-client-nrt-class
+  bandwidth remaining ratio 10
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Loopback1
+ ip address 172.16.1.1 255.255.255.0
+!
+interface Port-channel1
+ switchport trunk allowed vlan 1-109,111-4094
+ switchport mode trunk
+!
+interface Port-channel2
+ no switchport
+ ip address 172.16.12.1 255.255.255.252
+ ipv6 address FE80::D1 link-local
+ ipv6 address 2001:DB8:3115:12::D1/64
+ ipv6 dhcp server VLAN120-IPV6-POOL
+!
+interface GigabitEthernet0/0
+ vrf forwarding Mgmt-vrf
+ no ip address
+ negotiation auto
+!
+interface GigabitEthernet1/0/1
+ switchport trunk allowed vlan 1-109,111-4094
+ switchport mode trunk
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet1/0/2
+ switchport trunk allowed vlan 1-109,111-4094
+ switchport mode trunk
+ channel-group 1 mode desirable
+!
+interface GigabitEthernet1/0/3
+ no switchport
+ no ip address
+ channel-group 2 mode desirable
+!
+interface GigabitEthernet1/0/4
+ no switchport
+ no ip address
+ channel-group 2 mode desirable
+!
+interface GigabitEthernet1/0/5
+ shutdown
+!
+interface GigabitEthernet1/0/6
+ switchport access vlan 99
+!
+interface GigabitEthernet1/0/7
+ shutdown
+!
+interface GigabitEthernet1/0/8
+ shutdown
+!
+interface GigabitEthernet1/0/9
+ shutdown
+!
+interface GigabitEthernet1/0/10
+ shutdown
+!
+interface GigabitEthernet1/0/11
+ shutdown
+!
+interface GigabitEthernet1/0/12
+ shutdown
+!
+interface GigabitEthernet1/0/13
+ shutdown
+!
+interface GigabitEthernet1/0/14
+ shutdown
+!
+interface GigabitEthernet1/0/15
+ shutdown
+!
+interface GigabitEthernet1/0/16
+ shutdown
+!
+interface GigabitEthernet1/0/17
+ shutdown
+!
+interface GigabitEthernet1/0/18
+ shutdown
+!
+interface GigabitEthernet1/0/19
+ shutdown
+!
+interface GigabitEthernet1/0/20
+ shutdown
+!
+interface GigabitEthernet1/0/21
+ shutdown
+!
+interface GigabitEthernet1/0/22
+ shutdown
+!
+interface GigabitEthernet1/0/23
+ shutdown
+!
+interface GigabitEthernet1/0/24
+ shutdown
+!
+interface GigabitEthernet1/1/1
+ shutdown
+!
+interface GigabitEthernet1/1/2
+ shutdown
+!
+interface GigabitEthernet1/1/3
+ shutdown
+!
+interface GigabitEthernet1/1/4
+ shutdown
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan99
+ ip address 10.1.99.1 255.255.255.0
+ ipv6 address FE80::D1 link-local
+ ipv6 address 2001:DB8:3115:99::D1/64
+ ipv6 nd other-config-flag
+ ipv6 dhcp server MANAGEMENT_IPV6_DHCP
+!
+interface Vlan120
+ ip address 10.1.120.1 255.255.255.0
+!
+ip forward-protocol nd
+ip http server
+ip http authentication local
+ip http secure-server
+!
+ip route 0.0.0.0 0.0.0.0 Port-channel2 172.16.12.2
+ip route 192.168.1.0 255.255.255.0 Vlan99
+!
+!
+ipv6 route ::/0 2001:DB8:3115:12::D2
+!
+!
+!
+!
+line con 0
+ stopbits 1
+line aux 0
+line vty 5 15
+!
+wsma agent exec
+ profile httplistener
+ profile httpslistener
+!
+wsma agent config
+ profile httplistener
+ profile httpslistener
+!
+wsma agent filesys
+ profile httplistener
+ profile httpslistener
+!
+wsma agent notify
+ profile httplistener
+ profile httpslistener
+!
+!
+wsma profile listener httplistener
+ transport http
+!
+wsma profile listener httpslistener
+ transport https
+!
+ap group default-group
+end

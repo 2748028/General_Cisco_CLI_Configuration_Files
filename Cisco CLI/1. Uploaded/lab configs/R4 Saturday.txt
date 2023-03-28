@@ -1,0 +1,96 @@
+en
+conf t
+hostname R4
+no ip domain-lookup
+ipv6 unicast-routing
+
+vrf definition VRF-INET
+rd 65018:4
+address-family ipv4
+exit-address-family
+address-family ipv6
+exit-address-family
+exi
+
+ipv6 route vrf VRF-INET 2001:db8:18::/48 s0/1/1
+
+int g0/0/1
+bandwidth 1024
+no shut
+
+int g0/0/1.20
+vrf forwarding VRF-INET
+encapsulation dot1Q 20
+ip address 203.1.1.18 255.255.255.0
+ipv6 address FE80::5 link-local
+ipv6 address 2001:DB8:18:12::1/64
+bandwidth 1024
+no shut
+
+interface GigabitEthernet0/0/1.10
+bandwidth 1024
+encapsulation dot1Q 10
+ip address 199.212.32.18 255.255.255.0
+no shut
+
+int s0/1/0
+bandwidth 64
+ip address 172.16.18.2 255.255.255.252
+ipv6 address FE80::4 link-local
+ipv6 address 2001:DB8:18:10::2/64
+no shut
+
+int s0/1/1
+vrf forwarding VRF-INET
+bandwidth 64
+ip address 203.0.18.2 255.255.255.248
+ipv6 address FE80::5 link-local
+ipv6 address 2001:DB8:18:ABCD::2/64
+no shut
+
+int g0/0/0
+shutdown 
+exit
+
+int g0/0/2
+shutdown
+exit
+
+route-map SET_MED permit 12
+set Metric 50
+exi
+
+router bgp 65018
+bgp router-id 18.4.4.4
+neighbor 172.16.18.1 remote-as 65018
+neighbor 172.16.18.1 password cisco123
+neighbor 172.16.18.1 next-hop-self
+neighbor 199.212.32.4 remote-as 65004
+neighbor 199.212.32.4 route-map SET-MED out
+bgp log-neighbor-changes
+
+address-family ipv4 unicast
+network 172.16.18.0 mask 255.255.255.252
+neighbor 199.212.32.4 activate
+neighbor 172.16.18.1 activate
+neighbor 199.212.32.4 activate
+neighbor 172.16.4.1 activate
+network 10.18.1.0 mask 255.255.255.0
+network 10.18.0.0 mask 255.255.255.0
+network 10.18.5.0 mask 255.255.255.252
+network 10.10.2.0 mask 255.255.255.0
+network 10.18.5.4 mask 255.255.255.252
+network 10.18.5.8 mask 255.255.255.252
+network 10.18.5.12 mask 255.255.255.252
+network 10.18.3.0 mask 255.255.255.0
+network 10.18.4.0 mask 255.255.255.0
+exi
+
+address-family ipv6 unicast
+neighbor 199.212.32.4 activate
+neighbor 172.16.4.1 activate
+exi
+exi
+
+ip route 0.0.0.0 0.0.0.0 203.1.1.254
+

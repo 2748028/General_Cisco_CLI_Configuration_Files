@@ -1,0 +1,15 @@
+hostname R2
+!
+interface Serial0/0/0
+description R2 --> R1
+ip address 10.1.1.2 255.255.255.252
+no shutdown
+exit
+interface Serial0/0/1
+description R2 --> R3
+ip address 10.2.2.1 255.255.255.252
+clock rate 128000
+no shutdown
+exit
+!
+end

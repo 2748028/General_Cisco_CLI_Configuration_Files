@@ -1,0 +1,229 @@
+en
+conf t
+hostname R3
+no ip domain-lookup
+ipv6 unicast-routing
+
+ip route 0.0.0.0 0.0.0.0 s0/1/1
+ipv6 route 0:0:0:0::0/0 s0/1/1
+
+vrf definition VRF-OSPF
+rd 65018:3
+address-family ipv4 unicast
+exit-address-family
+address-family ipv6 unicast
+exit-address-family
+exi
+
+int g0/0
+bandwidth 1024
+no shut
+
+int g0/0.10
+vrf forwarding VRF-OSPF
+encapsulation dot1Q 10
+bandwidth 1024
+ip address 10.18.5.2 255.255.255.252
+ipv6 address FE80::6 link-local
+ipv6 address 2001:DB8:18:6::2/64
+no shut
+
+int lo0
+vrf forwarding VRF-OSPF
+bandwidth 1024
+ip address 10.18.0.1 255.255.255.0
+ipv6 address FE80::6 link-local
+ipv6 address 2001:DB8:18:1::1/64
+ospfv3 network point-to-point
+ospfv3 18 ipv4 area 18
+ospfv3 18 ipv4 area 18
+no shut
+
+int lo1
+vrf forwarding VRF-OSPF
+bandwidth 64
+ip address 10.18.1.1 255.255.255.0
+ipv6 address FE80::6 link-local
+ipv6 address 2001:DB8:18:2::1/64
+ospfv3 network point-to-point
+ospfv3 18 ipv4 area 18
+ospfv3 18 ipv4 area 18
+no shut
+
+int s0/1/0
+clock rate 64000
+bandwidth 64
+ip address 172.16.18.1 255.255.255.252
+ipv6 address FE80::3 link-local
+ipv6 address 2001:DB8:18:10::1/64
+ip nat outside
+no shut
+
+int s0/1/1
+clock rate 64000
+bandwidth 64
+ip address 203.0.18.1 255.255.255.248
+ipv6 address FE80::3 link-local
+ipv6 address 2001:DB8:18:ABCD::1/64
+ipv6 address 2001:DB8:18:ABCD::1/64
+ip nat outside
+ip virtual-reassembly in
+no shut
+exi
+
+router eigrp CASE2016
+address-family ipv4 unicast autonomous-system 18
+network 10.18.5.10 0.0.0.0
+network 10.18.5.13 0.0.0.0
+network 203.0.18.1 0.0.0.0
+network 172.16.18.1 0.0.0.0
+eigrp router-id 3.3.3.3
+topology base
+redistribute bgp 65018
+exi
+exi
+
+address-family ipv6 unicast autonomous-system 18
+af-interface s0/1/1
+shutdown
+exit-af-interface
+af-interface s0/1/0
+shutdown
+exit-af-interface
+eigrp router-id 3.3.3.6
+topology base
+redistribute bgp 65018
+exi
+
+router ospfv3 18
+address-family ipv4 unicast vrf VRF-OSPF
+router-id 3.3.3.3
+auto-cost reference-bandwidth 100000
+area 18 stub no-summary
+passive-interface lo0
+passive-interface lo1
+capability vrf-lite
+exit-address-family
+
+address-family ipv6 unicast vrf VRF-OSPF
+router-id 3.3.3.6
+auto-cost reference-bandwidth 100000
+area 18 stub no-summary
+capability vrf-lite
+passive-interface lo0
+passive-interface lo1
+exit-address-family
+
+int g0/0.10
+bandwidth 1024
+encapsulation dot1Q 10
+ospfv3 18 ipv4 area 18
+ospfv3 18 ipv6 area 18
+no shut
+exi
+
+int lo0
+ospfv3 network point-to-point
+ospfv3 18 ipv4 area 18
+ospfv3 18 ipv6 area 18
+no shut
+
+int s0/0/0
+bandwidth 64
+clock rate 64000
+ip address 10.18.5.10 255.255.255.252
+ipv6 address FE80::3 link-local
+ipv6 address 2001:DB8:18:8::2/64
+ip virtual-reassembly in
+ip nat inside
+no shut
+
+int g0/0.20
+bandwidth 1024
+encapsulation dot1Q 20
+ip address 10.18.5.13 255.255.255.252
+ipv6 address FE80::3 link-local
+ipv6 address 2001:DB8:18:9::2/64 
+ip virtual-reassembly in
+ip nat inside
+no shut
+
+int s0/0/1
+shutdown
+exit
+
+ip access-list standard NAT
+permit 10.18.0.0 0.0.255.255
+exit
+
+ip nat inside source list NAT interface Serial 0/1/1 overload
+ip nat inside source static 10.18.2.1 203.0.18.3
+ip route 0.0.0.0 0.0.0.0 203.0.18.3
+
+int s0/0/0
+ip nat inside
+
+int g0/0.20
+ip nat inside
+
+int s0/1/1
+ip nat outside
+
+route-map LOCALPREF permit 10
+set local-preference 500
+exit
+
+route-map LOCALPREFV6 permit 11
+set local-preference 500
+exit
+
+router bgp 65018
+no synchronization
+bgp router-id 18.3.3.3
+bgp log-neighbor-changes
+neighbor 172.16.18.2 remote-as 65018
+neighbor 172.16.18.2 password cisco123
+neighbor 172.16.18.2 next-hop-self
+neighbor 172.16.18.2 route-map LOCALPREF in
+neighbor 172.16.18.2 route-map LOCALPREFV6 in
+neighbor FEC0:1::4 remote-as 65004
+
+address-family ipv4 unicast
+neighbor 172.16.18.2 activate
+network 10.18.0.0 mask 255.255.0.0
+network 172.16.18.0 mask 255.255.255.252
+network 10.18.1.0 mask 255.255.255.0
+network 10.18.0.0 mask 255.255.255.0
+network 10.18.5.0 mask 255.255.255.252
+network 10.10.2.0 mask 255.255.255.0
+network 10.18.5.4 mask 255.255.255.252
+network 10.18.5.8 mask 255.255.255.252
+network 10.18.5.12 mask 255.255.255.252
+network 10.18.3.0 mask 255.255.255.0
+network 10.18.4.0 mask 255.255.255.0
+no neighbor FEC0:1::4 activate
+redistribute eigrp 18
+
+address-family ipv6 unicast
+neighbor 172.16.18.2 activate
+network 2001:DB8:18:ABCD::/64
+network 2001:DB8:18:2::/64
+network 2001:DB8:18:1::/64
+network 2001:DB8:18:6::/64
+network 2001:DB8:18:3::/64
+network 2001:DB8:18:7::/64
+network 2001:DB8:18:8::/64
+network 2001:DB8:18:9::/64
+network 2001:DB8:18:4::/64
+network 2001:DB8:18:5::/64
+network 2001:DB8:18:10::/64
+neighbor FEC0:1::/64
+neighbor FEC0:1::4/64 activate
+redistribute eigrp 18
+exit
+exit
+
+int tunnel 0
+ipv6 address FEC0:1::18/64
+tunnel source s0/1/0
+tunnel dest 2001:DB8:10::4/64

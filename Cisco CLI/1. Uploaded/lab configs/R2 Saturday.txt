@@ -1,0 +1,136 @@
+en
+conf t
+no ip domain-lookup
+hostname R2
+no ip domain-lookup
+ipv6 unicast-routing
+
+vrf definition VRF-EIGRP
+rd 65018:2
+address-family ipv4
+exit-address-family
+address-family ipv6
+exit-address-family
+
+int lo0
+ospfv3 network point-to-point
+ipv6 enable
+bandwidth 1024
+ip address 10.18.2.1 255.255.255.0
+ipv6 address FE80::1 link-local
+ipv6 address 2001:DB8:18:3::1/64
+ospfv3 18 ipv4 area 0
+ospfv3 18 ipv6 area 0
+no shut
+
+int lo1
+vrf forwarding VRF-EIGRP
+bandwidth 1024
+ip address 10.18.3.1 255.255.255.0
+ipv6 address FE80::7 link-local
+ipv6 address 2001:DB8:21:4::1/64
+no shut
+
+int lo2
+vrf forwarding VRF-EIGRP
+bandwidth 1024
+ip address 10.18.4.1 255.255.255.0
+ipv6 address FE80::7 link-local
+ipv6 address 2001:DB8:18:5::1/64
+no shut
+
+int g0/0
+bandwidth 1024
+no shut
+
+int g0/0.20
+bandwidth 1024
+vrf forwarding VRF-EIGRP
+no shut
+
+router eigrp CASE2016
+address-family ipv4 unicast vrf VRF-EIGRP autonomous-system 18
+af-interface lo1
+passive-interface
+exit-af-interface
+
+af-interface lo2
+passive-interface
+exit-af-interface
+exit-address-family
+
+address-family ipv6 unicast vrf VRF-EIGRP autonomous-system 18
+af-interface lo1
+passive-interface
+exit-af-interface
+
+af-interface lo2
+passive-interface
+exit-af-interface
+exit-address-family
+
+router eigrp CASE2016
+address-family ipv4 unicast vrf VRF-EIGRP autonomous-system 18
+eigrp router-id 2.2.2.2
+network  10.18.3.1 0.0.0.0
+network  10.18.5.14 0.0.0.0
+network  10.18.4.1 0.0.0.0
+eigrp stub connected
+exi
+
+address-family ipv6 unicast vrf VRF-EIGRP autonomous-system 18
+eigrp router-id 2.2.2.6
+eigrp stub connected
+exi
+exi
+
+int s0/0/0
+bandwidth 64
+ip address 10.18.5.5 255.255.255.252
+ipv6 address FE80::2 link-local
+ipv6 address 2001:DB8:18:7::2/64
+ospfv3 18 ipv4 area 0
+ospfv3 18 ipv6 area 0
+no shut
+exi
+
+router ospfv3 18
+address-family ipv4 unicast
+router-id 2.2.2.2
+auto-cost reference-bandwidth 100000
+area 18 stub no-summary
+passive-interface loopback 0
+
+address-family ipv6 unicast
+router-id 2.2.2.6
+auto-cost reference-bandwidth 100000
+area 18 stub no-summary
+passive-interface loopback 0
+
+int g0/0.10
+ipv6 enable
+encapsulation dot1Q 10
+bandwidth 1024
+ip address 10.18.5.1 255.255.255.252
+ipv6 address FE80::2 link-local
+ipv6 address 2001:DB8:18:6::1/64
+ospfv3 18 ipv4 area 18
+ospfv3 18 ipv6 area 18
+encapsulation dot1Q 10
+no shut
+
+int g0/0.20
+bandwidth 1024
+encapsulation dot1Q 20
+ip address 10.18.5.14 255.255.255.252
+ipv6 address FE80::7 link-local
+ipv6 address 2001:DB8:20:9::1/64
+no shut
+
+int s0/0/1
+shutdown
+exit
+
+int g0/1
+shutdown
+exit
